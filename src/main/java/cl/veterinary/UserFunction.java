@@ -1,7 +1,10 @@
 package cl.veterinary;
 
-import cl.veterinary.model.User;
-import cl.veterinary.service.UserService;
+import java.util.Optional;
+
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContext;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
@@ -12,10 +15,9 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.BindingName;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.ApplicationContext;
 
-import java.util.Optional;
+import cl.veterinary.model.User;
+import cl.veterinary.service.UserService;
 
 
 public class UserFunction {
@@ -35,10 +37,15 @@ public class UserFunction {
             final ExecutionContext executionContext) {
 
         executionContext.getLogger().info("Procesando solicitud listUser...");
+        
 
         try {
             var customers = userService.findAll();
-            return request.createResponseBuilder(HttpStatus.OK).body(customers).build();
+            return request
+                .createResponseBuilder(HttpStatus.OK)
+                .header("Content-Type", "application/json") 
+                .body(customers)
+                .build();
         } catch (Exception e) {
             executionContext.getLogger().severe("Error al obtener usuarios: " + e.getMessage());
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -65,12 +72,14 @@ public class UserFunction {
             Optional<User> user = userService.findUserById(userId);
 
             if (user.isPresent()) {
-                return request.createResponseBuilder(HttpStatus.OK)
-                        .body(user.get())
-                        .build();
+                return request
+                    .createResponseBuilder(HttpStatus.OK)
+                    .header("Content-Type", "application/json") 
+                    .body(user.get())
+                    .build();
             } else {
-                return request.createResponseBuilder(HttpStatus.NOT_FOUND)
-                        .body("Usuario con ID " + id + " no encontrado.")
+                return request.createResponseBuilder(HttpStatus.OK)
+                        .body(new User())
                         .build();
             }
         } catch (NumberFormatException e) {
@@ -104,9 +113,11 @@ public class UserFunction {
 
             User saved = userService.saveUser(user);
 
-            return request.createResponseBuilder(HttpStatus.CREATED)
-                    .body(saved)
-                    .build();
+            return request
+                .createResponseBuilder(HttpStatus.OK)
+                .header("Content-Type", "application/json") 
+                .body(saved)
+                .build();
 
         } catch (Exception e) {
             context.getLogger().severe("Error al guardar usuario: " + e.getMessage());
@@ -150,6 +161,11 @@ public class UserFunction {
             // Actualizar campos
             existing.setId(userId);
             existing.setNombre(updatedData.getNombre());
+            existing.setApellidoPaterno(updatedData.getApellidoPaterno());
+            existing.setApellidoMaterno(updatedData.getApellidoMaterno());
+            existing.setRut(updatedData.getRut());
+            existing.setDireccion(updatedData.getDireccion());
+            existing.setCelular(updatedData.getCelular());
             existing.setEmail(updatedData.getEmail());
             existing.setActivo(updatedData.getActivo());
             existing.setPassword(updatedData.getPassword());
@@ -158,9 +174,11 @@ public class UserFunction {
             // Guardar cambios
             User updated = userService.updateUser(existing);
 
-            return request.createResponseBuilder(HttpStatus.OK)
-                    .body(updated)
-                    .build();
+            return request
+                .createResponseBuilder(HttpStatus.OK)
+                .header("Content-Type", "application/json") 
+                .body(updated)
+                .build();
 
         } catch (NumberFormatException e) {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
@@ -194,14 +212,18 @@ public class UserFunction {
             Optional<User> existing = userService.findUserById(userId);
             if (existing.isEmpty()) {
                 return request.createResponseBuilder(HttpStatus.NOT_FOUND)
-                        .body("usuario con ID " + id + " no encontrado.")
+                        .body(new User())
                         .build();
             }
 
             // Eliminar
             userService.deleteUser(userId);
 
-            return request.createResponseBuilder(HttpStatus.OK).build(); // 204 vacío
+            return request
+                .createResponseBuilder(HttpStatus.OK)
+                .header("Content-Type", "application/json") 
+                .body("Usuario eliminado")
+                .build();
 
         } catch (NumberFormatException e) {
             return request.createResponseBuilder(HttpStatus.BAD_REQUEST)

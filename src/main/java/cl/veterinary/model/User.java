@@ -19,16 +19,31 @@ public class User {
     @SequenceGenerator(name = "customer_seq", sequenceName = "CUSTOMER_SEQ", allocationSize = 1)
     private Long id;
 
-    @Column(name = "NOMBRE")
+    @Column(name = "nombre")
     private String nombre;
 
-    @Column(name = "EMAIL")
+    @Column(name = "apellidoPaterno")
+    private String apellidoPaterno;
+
+    @Column(name = "apellidoMaterno")
+    private String apellidoMaterno;
+
+    @Column(name = "rut")
+    private String rut;
+
+    @Column(name = "direccion")
+    private String direccion;
+
+    @Column(name = "celular")
+    private String celular;
+
+    @Column(name = "email")
     private String email;
 
-    @Column(name = "PASSWORD")
+    @Column(name = "password")
     private String password;
 
-    @Column(name = "ACTIVO")
+    @Column(name = "activo")
     private Boolean activo;
 
     @ManyToOne
