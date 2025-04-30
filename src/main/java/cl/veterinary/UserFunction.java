@@ -29,7 +29,69 @@ public class UserFunction {
             context.getBean(UserService.class);
 
 
+    @FunctionName("findAllUser")
+    public HttpResponseMessage findAllCustomer(
+            @HttpTrigger(name = "req", methods = {HttpMethod.GET}, authLevel = AuthorizationLevel.FUNCTION)
+            HttpRequestMessage<Optional<String>> request,
+            final ExecutionContext executionContext) {
 
+        executionContext.getLogger().info("Procesando solicitud listUser...");
+
+
+        try {
+            var customers = userService.findAll();
+            return request
+                    .createResponseBuilder(HttpStatus.OK)
+                    .header("Content-Type", "application/json")
+                    .body(customers)
+                    .build();
+        } catch (Exception e) {
+            executionContext.getLogger().severe("Error al obtener usuarios: " + e.getMessage());
+            return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al obtener los usuarios")
+                    .build();
+        }
+    }
+
+    @FunctionName("findUserById")
+    public HttpResponseMessage findCustomerById(
+            @HttpTrigger(
+                    name = "req",
+                    methods = {HttpMethod.GET},
+                    authLevel = AuthorizationLevel.FUNCTION,
+                    route = "findUserById/{id}") // ID como parte de la ruta
+            HttpRequestMessage<Optional<String>> request,
+            @BindingName("id") String id,
+            final ExecutionContext context) {
+
+        context.getLogger().info("Buscando usuario por ID: " + id);
+
+        try {
+            Long userId = Long.parseLong(id);
+            Optional<User> user = userService.findUserById(userId);
+
+            if (user.isPresent()) {
+                return request
+                        .createResponseBuilder(HttpStatus.OK)
+                        .header("Content-Type", "application/json")
+                        .body(user.get())
+                        .build();
+            } else {
+                return request.createResponseBuilder(HttpStatus.OK)
+                        .body(new User())
+                        .build();
+            }
+        } catch (NumberFormatException e) {
+            return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
+                    .body("ID inválido: debe ser numérico.")
+                    .build();
+        } catch (Exception e) {
+            context.getLogger().severe("Error al buscar usuario: " + e.getMessage());
+            return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al buscar el usuario.")
+                    .build();
+        }
+    }
     
 
     @FunctionName("saveUser")
